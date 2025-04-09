@@ -107,32 +107,6 @@ export default function Dashboard() {
                       </p>
                     </div>
                   </div>
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground">
-                        Current Semester
-                      </h3>
-                      <p className="text-lg font-medium">
-                        {session?.user?.semester || "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground">
-                        CGPA
-                      </h3>
-                      <p className="text-lg font-medium">
-                        {session?.user?.cgpa || "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground">
-                        Contact
-                      </h3>
-                      <p className="text-lg font-medium">
-                        {session?.user?.contact || "N/A"}
-                      </p>
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>
