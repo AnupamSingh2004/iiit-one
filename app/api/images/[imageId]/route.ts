@@ -1,4 +1,3 @@
-// app/api/images/[imageId]/route.ts
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
@@ -19,15 +18,13 @@ export async function GET(
       return NextResponse.json({ error: "Image not found" }, { status: 404 });
     }
 
-    // Convert Bytes back to Buffer if needed
     const buffer = Buffer.from(image.data);
 
-    // Create appropriate response with correct content type
     return new NextResponse(buffer, {
       headers: {
         "Content-Type": image.fileType,
         "Content-Disposition": `inline; filename="${image.fileName}"`,
-        "Cache-Control": "public, max-age=31536000", // Cache for a year
+        "Cache-Control": "public, max-age=31536000",
       },
     });
   } catch (error) {

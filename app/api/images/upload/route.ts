@@ -6,6 +6,8 @@ import { authOptions } from "../../auth/[...nextauth]/route";
 const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
+  const prismaClient = new PrismaClient();
+
   try {
     const session = await getServerSession(authOptions);
 
@@ -20,9 +22,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File too large. Max size is 5MB." },
+        { status: 400 },
+      );
+    }
+
+    if (!file.type.startsWith("image/")) {
+      return NextResponse.json(
+        { error: "Only image files are allowed." },
+        { status: 400 },
+      );
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    const image = await prisma.image.create({
+    const image = await prismaClient.image.create({
       data: {
         userId: session.user.id,
         fileName: file.name,
@@ -35,6 +51,7 @@ export async function POST(req: NextRequest) {
       {
         message: "Image uploaded successfully",
         imageId: image.id,
+        url: `/api/images/${image.id}`,
       },
       { status: 201 },
     );
@@ -45,6 +62,6 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   } finally {
-    await prisma.$disconnect();
+    await prismaClient.$disconnect();
   }
 }
