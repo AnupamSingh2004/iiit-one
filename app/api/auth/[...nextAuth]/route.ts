@@ -4,24 +4,21 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
+import { NextAuthOptions } from "next-auth";
 
 const prisma = new PrismaClient();
 
 function extractRollDetails(email: string) {
   const regex = /^(\d{2})(b[a-z]{2})(\d+)@iiitdmj\.ac\.in$/;
   const match = email.match(regex);
-
   if (!match) return null;
-
   const [_, batch, branchCode, rollNumber] = match;
-
   const branchMap: Record<string, string> = {
     bcs: "Computer Science and Engineering",
     bec: "Electronics and Communication Engineering",
     bme: "Mechanical Engineering",
     bsm: "Smart Manufacturing",
   };
-
   return {
     batch,
     branch: branchCode,
@@ -34,13 +31,12 @@ function isValidIIITDMJEmail(email: string) {
   return email.endsWith("@iiitdmj.ac.in");
 }
 
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      // Only allow specific domain
       profile(profile) {
         return {
           id: profile.sub,
@@ -60,28 +56,22 @@ const handler = NextAuth({
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
-
         if (!isValidIIITDMJEmail(credentials.email)) {
           throw new Error("Only IIITDMJ email addresses are allowed");
         }
-
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
-
         if (!user || !user.password) {
           return null;
         }
-
         const passwordMatch = await bcrypt.compare(
           credentials.password,
           user.password,
         );
-
         if (!passwordMatch) {
           return null;
         }
-
         return user;
       },
     }),
@@ -92,9 +82,7 @@ const handler = NextAuth({
       if (!isValidIIITDMJEmail(email)) {
         return false;
       }
-
       const rollDetails = extractRollDetails(email);
-
       if (rollDetails && account?.provider === "google") {
         await prisma.user.update({
           where: { email },
@@ -105,7 +93,6 @@ const handler = NextAuth({
           },
         });
       }
-
       return true;
     },
     async session({ session, user }) {
@@ -113,7 +100,6 @@ const handler = NextAuth({
         const dbUser = await prisma.user.findUnique({
           where: { email: session.user.email as string },
         });
-
         if (dbUser) {
           session.user = {
             ...session.user,
@@ -135,6 +121,7 @@ const handler = NextAuth({
     strategy: "jwt",
   },
   secret: process.env.NEXTAUTH_SECRET,
-});
+};
 
+const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

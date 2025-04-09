@@ -1,16 +1,15 @@
-// app/api/images/upload/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextAuth]/route";
 
 const prisma = new PrismaClient();
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -21,10 +20,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Store the image in the database
     const image = await prisma.image.create({
       data: {
         userId: session.user.id,
@@ -47,5 +44,7 @@ export async function POST(req: Request) {
       { error: "Failed to upload image" },
       { status: 500 },
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }
